@@ -26,4 +26,9 @@ apiRouter.post('/login', async (req, res) => {
   res.send({ success: false });
 });
 
+apiRouter.get('/games', async(req, res) => {
+  log('GET /api/games');
+  res.send({ games: ['ye'] });
+});
+
 module.exports = apiRouter;
