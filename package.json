@@ -1,0 +1,25 @@
+{
+  "name": "masonjar-launcher-backend",
+  "version": "1.0.0",
+  "description": "backend for mason-jar-launcher",
+  "main": "index.js",
+  "scripts": {
+    "start": "DEBUG=mjlbe:* node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marshmelllo/masonjar-launcher-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/marshmelllo/masonjar-launcher-backend/issues"
+  },
+  "homepage": "https://github.com/marshmelllo/masonjar-launcher-backend#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "debug": "^4.1.0",
+    "express": "^4.16.4"
+  }
+}
