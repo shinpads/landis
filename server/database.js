@@ -20,7 +20,8 @@ const database = {
       let success = true;
       if (query) {
         Object.keys(query).forEach((q) => {
-          if (doc[q] !== query[q]) {
+          log(doc[q], query[q]);
+          if (doc[q] != query[q]) {
             success = false;
           }
         });

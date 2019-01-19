@@ -1,30 +1,33 @@
+require('dotenv').config({ path: './.env.' + process.env.NODE_ENV });
 const fs = require('fs');
 const readline = require('readline');
-const {google} = require('googleapis');
+const { google } = require('googleapis');
 const debug = require('debug');
 
 const log = debug('mjlbe:apiRouter');
 const logError = debug('mjlbe:apiRouter:error');
 
+let drive = null;
+let auth = null;
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 const TOKEN_PATH = 'token.json';
 
 fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
-  authorize(JSON.parse(content), listFiles);
+  authorize(JSON.parse(content));
 });
 
-function authorize(credentials, callback) {
+function authorize(credentials) {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
       client_id, client_secret, redirect_uris[0]);
 
   fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback);
     oAuth2Client.setCredentials(JSON.parse(token));
-    callback(oAuth2Client);
+    auth = oAuth2Client;
+    drive = google.drive({ version: 'v3', oAuth2Client });
   });
 }
 
@@ -53,20 +56,31 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-function listFiles(auth) {
-  const drive = google.drive({ version: 'v3', auth });
-  drive.files.list({
-    pageSize: 10,
-    fields: 'nextPageToken, files(id, name)',
-  }, (err, res) => {
-    if (err) return log('The API returned an error: ' + err);
-    const files = res.data.files;
-    if (!files.length) {
-      log('No files found.');
-    }
-  });
+
+function streamFile(fileId, res) {
+  log('streamFile', fileId);
+  try {
+    drive.files.get({
+      auth: process.env.DRIVE_API_KEY,
+      fileId: fileId,
+      alt: 'media',
+    }, { responseType: 'stream', },
+    (err, result) => {
+      if (err) logError(err);
+      res.set({
+        'content-type': 'application/zip',
+        'content-disposition': 'attachment',
+        'content-length': result.headers['content-length'],
+      })
+      result.data
+        .on('end', () => log('done sending file'))
+        .on('error', (err) => logError(err))
+        .pipe(res);
+    });
+  } catch (err) {
+    logError(err);
+    res.send({ success: false });
+  }
 }
 
-function streamFile(fileId) {
-  
-}
+module.exports = { streamFile };
