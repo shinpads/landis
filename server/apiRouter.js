@@ -1,6 +1,8 @@
 const debug = require('debug');
 const log = debug('mjlbe:apiRouter');
 const logError = debug('mjlbe:apiRouter:error');
+const db = require('./database');
+const googledrive = require('./googledrive');
 
 function logStack(err) {
   logError(err);
@@ -26,9 +28,18 @@ apiRouter.post('/login', async (req, res) => {
   res.send({ success: false });
 });
 
-apiRouter.get('/games', async(req, res) => {
+apiRouter.get('/games', async (req, res) => {
   log('GET /api/games');
-  res.send({ games: ['ye'] });
+  try {
+    const games = await db.get('game');
+    if (games) {
+      res.send({ success: true, games });
+    } else {
+      res.send({ success: false });
+    }
+  } catch (err) {
+    res.send({ success: false });
+  }
 });
 
 module.exports = apiRouter;

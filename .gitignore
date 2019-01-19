@@ -62,3 +62,5 @@ typings/
 
 data.json
 package-lock.json
+credentials.json
+token.json

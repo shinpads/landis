@@ -7,7 +7,7 @@ const express = require('express');
 const app = express();
 
 const bodyParser = require('body-parser');
-const apiRouter = require('./apiRouter');
+const apiRouter = require('./server/apiRouter');
 
 app.use(bodyParser.json());
 

@@ -5,7 +5,7 @@ const fs = require('fs');
 const log = debug('mjlbe:database');
 const logError = debug('mjlbe:database:error');
 
-const fileName = __dirname + '/../data.json';
+const fileName = __dirname + '/data.json';
 const db = JSON.parse(fs.readFileSync(fileName, 'utf-8'));
 
 function save() {
@@ -18,11 +18,13 @@ const database = {
     if (!db[collection]) return found;
     db[collection].forEach((doc) => {
       let success = true;
-      Object.keys(query).forEach((q) => {
-        if (doc[q] !== query[q]) {
-          success = false;
-        }
-      });
+      if (query) {
+        Object.keys(query).forEach((q) => {
+          if (doc[q] !== query[q]) {
+            success = false;
+          }
+        });
+      }
       if (success) {
         found.push(doc);
       }
