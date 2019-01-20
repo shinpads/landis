@@ -20,7 +20,6 @@ const database = {
       let success = true;
       if (query) {
         Object.keys(query).forEach((q) => {
-          log(doc[q], query[q]);
           if (doc[q] != query[q]) {
             success = false;
           }
@@ -46,7 +45,6 @@ const database = {
           logError('Failed to Save DB', err);
           reject(err);
         }
-        log('Successfuly Saved DB');
         resolve(true);
       })
     });

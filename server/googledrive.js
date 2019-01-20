@@ -58,7 +58,6 @@ function getAccessToken(oAuth2Client, callback) {
 
 
 function streamFile(fileId, res) {
-  log('streamFile', fileId);
   try {
     drive.files.get({
       auth: process.env.DRIVE_API_KEY,
@@ -66,7 +65,10 @@ function streamFile(fileId, res) {
       alt: 'media',
     }, { responseType: 'stream', },
     (err, result) => {
-      if (err) logError(err);
+      if (err) {
+        logError(err);
+        return res.send({ success: false });
+      }
       res.set({
         'content-type': 'application/zip',
         'content-disposition': 'attachment',

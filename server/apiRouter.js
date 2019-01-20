@@ -20,9 +20,9 @@ const express = require('express');
 const apiRouter = express.Router();
 
 apiRouter.post('/register', async (req, res) => {
-  log('POST /api/register', req.body);
+  log('POST /api/register');
   try {
-    const { firstName, lastName, email, username, password } = req.body;
+    const { email, username, password } = req.body;
 
     const users = db.get('user', { email });
     if (users.length) return res.send({ success: false, reason: 'email taken' });
@@ -31,8 +31,7 @@ apiRouter.post('/register', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = {
-      firstName,
-      lastName,
+      id: generateID(),
       email,
       username,
       password: passwordHash
@@ -55,18 +54,37 @@ apiRouter.post('/login', async (req, res) => {
     const user = db.get('user', { email });
     if (!user.length) return res.send({ success: false });
     const passwordCheck = await bcrypt.compare(password, user[0].password);
-    if (passwordCheck) return res.send({ success: true });
-    else res.send({ success: false, reason: 'wrong password' });
+    if (!passwordCheck) return res.send({ success: false, reason: 'wrong password' });
+    sesh = db.get('session', { id: req.sid });
+    if (!sesh.length) return res.send({ success: false });
+    sesh[0].loggedIn = true;
+    sesh[0].userId = user[0].id;
+    await db.save();
+    const userCopy = copyObject(user[0]);
+    delete userCopy.password;
+    res.send({ success: true, user: userCopy });
   } catch (err) {
     res.send({ success: false });
   }
 });
 
+apiRouter.post('/logout', async(req, res) => {
+  log('POST /api/logout');
+  try {
+    const sesh = db.get('session', { id: req.sid });
+    sesh[0].loggedIn = false;
+    await db.save();
+    res.send({ success: true });
+  } catch (err) {
+    logError(err);
+    res.send({ success: false });
+  }
+});
+
 apiRouter.get('/games', async (req, res) => {
-  log('GET /api/games', req.headers.sid);
+  log('GET /api/games');
   try {
     const games = await db.get('game');
-    games.forEach(game => delete game.fileId);
     if (games) {
       res.send({ success: true, games });
     } else {
@@ -83,8 +101,6 @@ apiRouter.get('/game/download/:id', async (req, res) => {
   try {
     const game = await db.get('game', { id: id });
     if (!game.length || !game[0].fileId) {
-      log(game);
-      log('nah');
       return res.send({ success: false });
     }
     const fileId = game[0].fileId;
@@ -94,5 +110,23 @@ apiRouter.get('/game/download/:id', async (req, res) => {
     res.send({ success: false });
   }
 });
+
+function generateID() {
+  const values = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+  const length = 20;
+  let sid = '';
+  for (let i = 0; i < length; i++) {
+      sid += values[Math.floor(Math.random() * (values.length - 1))];
+  }
+  return sid;
+}
+
+function copyObject (x) {
+  let y = {}
+  Object.keys(x).forEach(k => {
+    y[k] = x[k];
+  });
+  return y;
+}
 
 module.exports = apiRouter;

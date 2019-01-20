@@ -22,10 +22,12 @@ app.use('/', async (req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
   res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, sid, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+  if (!req.headers.sid) return res.send({ success: false });
+  req.sid = req.headers.sid;
   const sesh = db.get('session', { id: req.headers.sid });
   if (!sesh.length) {
     db.add('session', {
-      id: req.header.sid,
+      id: req.headers.sid,
       loggedIn: false,
     });
     await db.save();
