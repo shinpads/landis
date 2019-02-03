@@ -1,11 +1,19 @@
-require('dotenv').config({ path: './.env.' + process.env.NODE_ENV });
+require('dotenv').config({ path: '../.env.' + process.env.NODE_ENV });
 const debug = require('debug');
 const bcrypt = require('bcrypt');
+const mongoose = require('mongoose');
+const db = require('./database');
+const googledrive = require('./googledrive');
+mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
+ {
+   auth: { audthdb: 'admin' },
+   user: process.env.MONGO_USER,
+   password: process.env.MONGO_PASSWORD,
+});
 
 const log = debug('mjlbe:apiRouter');
 const logError = debug('mjlbe:apiRouter:error');
-const db = require('./database');
-const googledrive = require('./googledrive');
+log(process.env.NODE_ENV, process.env.MONGO_USER);
 
 function logStack(err) {
   logError(err);
