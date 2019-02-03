@@ -10,7 +10,7 @@ const schema = {
   content: String,
   date: Date,
   fileId: String,
-  gameId: ObjectId,
+  gameId: mongoose.Schema.Types.ObjectId,
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'updates', autoIndex: true, strict: false });

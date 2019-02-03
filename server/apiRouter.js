@@ -2,8 +2,9 @@ require('dotenv').config({ path: '../.env.' + process.env.NODE_ENV });
 const debug = require('debug');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
-const db = require('./database');
+const oldDb = require('./database');
 const googledrive = require('./googledrive');
+const db = require('./models');
 mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
  {
    auth: { audthdb: 'admin' },
@@ -13,7 +14,6 @@ mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/
 
 const log = debug('mjlbe:apiRouter');
 const logError = debug('mjlbe:apiRouter:error');
-log(process.env.NODE_ENV, process.env.MONGO_USER);
 
 function logStack(err) {
   logError(err);
@@ -32,20 +32,19 @@ apiRouter.post('/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
 
-    const users = db.get('user', { email });
-    if (users.length) return res.send({ success: false, reason: 'email taken' });
-    const users2 = await db.get('user', { username });
+    const users = await db.User.model.find({ email });
+
+    if (users && users.length) return res.send({ success: false, reason: 'email taken' });
+    const users2 = await db.User.model.find({ username });
     if (users2.length) return res.send({ success: false, reason: 'username taken' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = {
-      id: generateID(),
+    const newUser = new db.User.model({
       email,
       username,
       password: passwordHash
-    };
-    db.add('user', newUser);
-    await db.save();
+    });
+    await newUser.save();
     res.send({ success: true });
 
   } catch (err) {
@@ -59,18 +58,17 @@ apiRouter.post('/login', async (req, res) => {
   log('POST /api/login');
   try {
     const { email, password } = req.body;
-    const user = db.get('user', { email });
-    if (!user.length) return res.send({ success: false });
-    const passwordCheck = await bcrypt.compare(password, user[0].password);
+    const user = await db.User.model.findOne({ email });
+    if (!user) return res.send({ success: false });
+    const passwordCheck = await bcrypt.compare(password, user._doc.password);
     if (!passwordCheck) return res.send({ success: false, reason: 'wrong password' });
-    sesh = db.get('session', { id: req.sid });
-    if (!sesh.length) return res.send({ success: false });
-    sesh[0].loggedIn = true;
-    sesh[0].userId = user[0].id;
-    await db.save();
-    const userCopy = copyObject(user[0]);
-    delete userCopy.password;
-    res.send({ success: true, user: userCopy });
+    const sesh = await db.Session.model.findOne({ sid: req.sid });
+    if (!sesh) return res.send({ success: false });
+    sesh.loggedIn = true;
+    sesh.userId = user._id;
+    await sesh.save();
+    delete user.password;
+    res.send({ success: true, user: user });
   } catch (err) {
     res.send({ success: false });
   }
@@ -79,9 +77,9 @@ apiRouter.post('/login', async (req, res) => {
 apiRouter.post('/logout', async(req, res) => {
   log('POST /api/logout');
   try {
-    const sesh = db.get('session', { id: req.sid });
+    const sesh = oldDb.get('session', { id: req.sid });
     sesh[0].loggedIn = false;
-    await db.save();
+    await oldDb.save();
     res.send({ success: true });
   } catch (err) {
     logError(err);
@@ -92,7 +90,7 @@ apiRouter.post('/logout', async(req, res) => {
 apiRouter.get('/games', async (req, res) => {
   log('GET /api/games');
   try {
-    const games = await db.get('game');
+    const games = await oldDb.get('game');
     if (games) {
       res.send({ success: true, games });
     } else {
@@ -107,7 +105,7 @@ apiRouter.get('/game/download/:id', async (req, res) => {
   const { id } = req.params;
   log(`/api/game/download/${id}`);
   try {
-    const game = await db.get('game', { id: id });
+    const game = await oldDb.get('game', { id: id });
     if (!game.length || !game[0].fileId) {
       return res.send({ success: false });
     }

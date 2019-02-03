@@ -1,15 +1,22 @@
 require('dotenv').config({ path: './.env.' + process.env.NODE_ENV });
 const debug = require('debug');
+const mongoose = require('mongoose');
+const db = require('./server/models');
+const express = require('express');
 
 const log = debug('mjlbe:apiRouter');
 const logError = debug('mjlbe:apiRouter:error');
-
-const express = require('express');
 const app = express();
 
 const bodyParser = require('body-parser');
-const db = require('./server/database');
 const apiRouter = require('./server/apiRouter');
+
+mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
+ {
+   auth: { audthdb: 'admin' },
+   user: process.env.MONGO_USER,
+   password: process.env.MONGO_PASSWORD,
+});
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -24,15 +31,15 @@ app.use('/', async (req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, sid, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
   if (!req.headers.sid) return res.send({ success: false });
   req.sid = req.headers.sid;
-  const sesh = db.get('session', { id: req.headers.sid });
-  if (!sesh.length) {
-    db.add('session', {
-      id: req.headers.sid,
+  const sesh = await db.Session.model.findOne({ sid: req.headers.sid });
+  if (!sesh) {
+    const newSesh = new db.Session.model({
       loggedIn: false,
+      sid: req.headers.sid,
     });
-    await db.save();
+    await newSesh.save();
   } else {
-    req.user = sesh[0].userId | null;
+    req.user = sesh.userId;
   }
   next();
 })

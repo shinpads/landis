@@ -6,8 +6,9 @@ const mongoose = require('mongoose');
 
 const schema = {
   _id: String,
+  sid: String,
   loggedIn: Boolean,
-  userId: ObjectId,
+  userId: mongoose.Schema.Types.ObjectId,
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'sessions', autoIndex: true, strict: false });
