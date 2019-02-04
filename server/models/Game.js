@@ -14,7 +14,8 @@ const schema = {
   hoursPlayed: Number,
   fileId: String,
   imageId: String,
-  updates: mongoose.Schema.Types.ObjectId,
+  updates: Array,
+  version: String,
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'games', autoIndex: true, strict: false });

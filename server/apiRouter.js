@@ -90,7 +90,7 @@ apiRouter.post('/logout', async(req, res) => {
 apiRouter.get('/games', async (req, res) => {
   log('GET /api/games');
   try {
-    const games = await oldDb.get('game');
+    const games = await db.Game.model.find();
     if (games) {
       res.send({ success: true, games });
     } else {
@@ -105,11 +105,11 @@ apiRouter.get('/game/download/:id', async (req, res) => {
   const { id } = req.params;
   log(`/api/game/download/${id}`);
   try {
-    const game = await oldDb.get('game', { id: id });
-    if (!game.length || !game[0].fileId) {
+    const game = await db.Game.model.findOne({ _id: id });
+    if (!game || !game._doc.fileId) {
       return res.send({ success: false });
     }
-    const fileId = game[0].fileId;
+    const fileId = game._doc.fileId;
     googledrive.streamFile(fileId, res);
   } catch (err) {
     logError(err);
