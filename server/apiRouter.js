@@ -29,6 +29,7 @@ const apiRouter = express.Router();
 apiRouter.post('/user/login', login);
 apiRouter.post('/user/register', register);
 apiRouter.post('/user/logout', logout);
+apiRouter.get('/user/all', permissions('EDIT_USERS'), getUsers);
 
 // game routes
 apiRouter.get('/game/all', getGames);
@@ -125,5 +126,32 @@ async function downloadGame(req, res) {
   }
 }
 
-
+async function getUsers(req, res) {
+  log('GET /api/users/all');
+  try {
+    const users = await db.User.model.find();
+    if (users) {
+      return res.send({ sucess: true, users });
+    } else {
+      return res.send({ success: false });
+    }
+  } catch(err) {
+    res.send({ success: false });
+  }
+}
+function permissions(perm) {
+  return async (req, res, next) => {
+    try {
+      const user = await db.User.model.find({ _id: req.userId });
+      if (user && user.permissions && user.permissions[perm]) {
+        return next();
+      } else {
+        return res.send({ success: false });
+      }
+    } catch (err) {
+      logError(err);
+      res.send({ sucess: false });
+    }
+  };
+}
 module.exports = apiRouter;
