@@ -43,11 +43,13 @@ async function login(req, res) {
     if (!user) return res.send({ success: false });
     const passwordCheck = await bcrypt.compare(password, user._doc.password);
     if (!passwordCheck) return res.send({ success: false, reason: 'wrong password' });
-    const sesh = await db.Session.model.findOne({ sid: req.sid });
+    const sesh = await db.Session.model.findOneAndUpdate(
+      { sid: req.sid },
+      {
+        loggedIn: true,
+        userId: user._id,
+      }, { new: true });
     if (!sesh) return res.send({ success: false });
-    sesh.loggedIn = true;
-    sesh.userId = user._id;
-    await sesh.save();
     delete user.password;
     res.send({ success: true, user: user });
   } catch (err) {
@@ -85,7 +87,7 @@ async function register(req, res) {
 async function logout(req, res) {
   log('POST /api/logout');
   try {
-    const sesh = await db.Session.model.findOne({ _id: req.sid });
+    const sesh = await db.Session.model.findOne({ sid: req.sid });
     if (!sesh) return res.send({ success: false });
     sesh.loggedIn = false;
     await sesh.save();
@@ -142,8 +144,8 @@ async function getUsers(req, res) {
 function permissions(perm) {
   return async (req, res, next) => {
     try {
-      const user = await db.User.model.find({ _id: req.userId });
-      if (user && user.permissions && user.permissions[perm]) {
+      const user = await db.User.model.findOne({ _id: req.user });
+      if (req.loggedIn && user && user._doc.permissions && user._doc.permissions[perm]) {
         return next();
       } else {
         return res.send({ success: false });

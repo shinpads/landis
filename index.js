@@ -39,7 +39,8 @@ app.use('/', async (req, res, next) => {
     });
     await newSesh.save();
   } else {
-    req.user = sesh.userId;
+    req.user = sesh._doc.userId;
+    req.loggedIn = sesh._doc.loggedIn;
   }
   next();
 })
