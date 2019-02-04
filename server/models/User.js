@@ -10,7 +10,8 @@ const schema = {
   username: String,
   password: String,
   createdDate: Date,
-  permissions: Object
+  permissions: Object,
+  lastOnline: Date,
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'users', autoIndex: true, strict: false });

@@ -41,6 +41,12 @@ app.use('/', async (req, res, next) => {
   } else {
     req.user = sesh._doc.userId;
     req.loggedIn = sesh._doc.loggedIn;
+    if (sesh._doc.loggedIn && sesh._doc.userId) {
+      const user = await db.User.model.findOneAndUpdate({ _id: sesh._doc.userId },
+      {
+        lastOnline: Date.now(),
+      });
+    }
   }
   next();
 })

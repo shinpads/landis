@@ -33,7 +33,7 @@ apiRouter.get('/user/all', permissions('EDIT_USERS'), getUsers);
 
 // game routes
 apiRouter.get('/game/all', getGames);
-apiRouter.get('game/download/:id', downloadGame);
+apiRouter.get('/game/download/:id', downloadGame);
 
 async function login(req, res) {
   log('POST /api/login');

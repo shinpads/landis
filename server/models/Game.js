@@ -16,6 +16,7 @@ const schema = {
   imageId: String,
   updates: Array,
   version: String,
+  forceUpdate: Boolean
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'games', autoIndex: true, strict: false });
