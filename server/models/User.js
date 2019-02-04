@@ -9,7 +9,8 @@ const schema = {
   email: { type: String, required: true},
   username: String,
   password: String,
-  createdDate: Date
+  createdDate: Date,
+  permissions: Object
 };
 
 const compiledSchema = new mongoose.Schema(this.schema, { collection: 'users', autoIndex: true, strict: false });

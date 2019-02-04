@@ -2,7 +2,6 @@ require('dotenv').config({ path: '../.env.' + process.env.NODE_ENV });
 const debug = require('debug');
 const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
-const oldDb = require('./database');
 const googledrive = require('./googledrive');
 const db = require('./models');
 mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
@@ -24,10 +23,38 @@ process.on('unhandledRejection', logStack);
 process.on('rejectionHandled', logStack);
 
 const express = require('express');
-
 const apiRouter = express.Router();
 
-apiRouter.post('/register', async (req, res) => {
+// user routes
+apiRouter.post('/user/login', login);
+apiRouter.post('/user/register', register);
+apiRouter.post('/user/logout', logout);
+
+// game routes
+apiRouter.get('/game/all', getGames);
+apiRouter.get('game/download/:id', downloadGame);
+
+async function login(req, res) {
+  log('POST /api/login');
+  try {
+    const { email, password } = req.body;
+    const user = await db.User.model.findOne({ email });
+    if (!user) return res.send({ success: false });
+    const passwordCheck = await bcrypt.compare(password, user._doc.password);
+    if (!passwordCheck) return res.send({ success: false, reason: 'wrong password' });
+    const sesh = await db.Session.model.findOne({ sid: req.sid });
+    if (!sesh) return res.send({ success: false });
+    sesh.loggedIn = true;
+    sesh.userId = user._id;
+    await sesh.save();
+    delete user.password;
+    res.send({ success: true, user: user });
+  } catch (err) {
+    res.send({ success: false });
+  }
+}
+
+async function register(req, res) {
   log('POST /api/register');
   try {
     const { email, username, password } = req.body;
@@ -52,42 +79,23 @@ apiRouter.post('/register', async (req, res) => {
     res.send({ success: false });
   }
 
-});
+}
 
-apiRouter.post('/login', async (req, res) => {
-  log('POST /api/login');
-  try {
-    const { email, password } = req.body;
-    const user = await db.User.model.findOne({ email });
-    if (!user) return res.send({ success: false });
-    const passwordCheck = await bcrypt.compare(password, user._doc.password);
-    if (!passwordCheck) return res.send({ success: false, reason: 'wrong password' });
-    const sesh = await db.Session.model.findOne({ sid: req.sid });
-    if (!sesh) return res.send({ success: false });
-    sesh.loggedIn = true;
-    sesh.userId = user._id;
-    await sesh.save();
-    delete user.password;
-    res.send({ success: true, user: user });
-  } catch (err) {
-    res.send({ success: false });
-  }
-});
-
-apiRouter.post('/logout', async(req, res) => {
+async function logout(req, res) {
   log('POST /api/logout');
   try {
-    const sesh = oldDb.get('session', { id: req.sid });
-    sesh[0].loggedIn = false;
-    await oldDb.save();
+    const sesh = await db.Session.model.findOne({ _id: req.sid });
+    if (!sesh) return res.send({ success: false });
+    sesh.loggedIn = false;
+    await sesh.save();
     res.send({ success: true });
   } catch (err) {
     logError(err);
     res.send({ success: false });
   }
-});
+}
 
-apiRouter.get('/games', async (req, res) => {
+async function getGames(req, res) {
   log('GET /api/games');
   try {
     const games = await db.Game.model.find();
@@ -99,9 +107,9 @@ apiRouter.get('/games', async (req, res) => {
   } catch (err) {
     res.send({ success: false });
   }
-});
+}
 
-apiRouter.get('/game/download/:id', async (req, res) => {
+async function downloadGame(req, res) {
   const { id } = req.params;
   log(`/api/game/download/${id}`);
   try {
@@ -115,24 +123,7 @@ apiRouter.get('/game/download/:id', async (req, res) => {
     logError(err);
     res.send({ success: false });
   }
-});
-
-function generateID() {
-  const values = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-  const length = 20;
-  let sid = '';
-  for (let i = 0; i < length; i++) {
-      sid += values[Math.floor(Math.random() * (values.length - 1))];
-  }
-  return sid;
 }
 
-function copyObject (x) {
-  let y = {}
-  Object.keys(x).forEach(k => {
-    y[k] = x[k];
-  });
-  return y;
-}
 
 module.exports = apiRouter;
