@@ -26,6 +26,7 @@ const express = require('express');
 const apiRouter = express.Router();
 
 // user routes
+apiRouter.get('/user/from-session', getUser);
 apiRouter.post('/user/login', login);
 apiRouter.post('/user/register', register);
 apiRouter.post('/user/logout', logout);
@@ -50,7 +51,7 @@ async function login(req, res) {
         userId: user._id,
       }, { new: true });
     if (!sesh) return res.send({ success: false });
-    delete user.password;
+    delete user._doc.password;
     res.send({ success: true, user: user });
   } catch (err) {
     res.send({ success: false });
@@ -141,6 +142,24 @@ async function getUsers(req, res) {
     res.send({ success: false });
   }
 }
+
+async function getUser(req, res) {
+  log('/api/user/from-session');
+  try {
+    const userId = req.user;
+    const user = await db.User.model.findOne({ _id: userId });
+    if (user) {
+      delete user._doc.password;
+      res.send({ success: true, user });
+    } else {
+      res.send({ success: false });
+    }
+  } catch(err) {
+    logError(err);
+    res.send({ success: false });
+  }
+}
+
 function permissions(perm) {
   return async (req, res, next) => {
     try {
