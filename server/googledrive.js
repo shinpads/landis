@@ -25,6 +25,7 @@ function authorize(credentials) {
       client_id, client_secret, redirect_uris[0]);
 
   fs.readFile(TOKEN_PATH, (err, token) => {
+    if (err) return getAccessToken(oAuth2Client);
     oAuth2Client.setCredentials(JSON.parse(token));
     auth = oAuth2Client;
     drive = google.drive({ version: 'v3', oAuth2Client });
@@ -36,7 +37,6 @@ function getAccessToken(oAuth2Client, callback) {
     access_type: 'offline',
     scope: SCOPES,
   });
-  console.log('Authorize this app by visiting this url:', authUrl);
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -66,7 +66,7 @@ function streamFile(fileId, res) {
     }, { responseType: 'stream', },
     (err, result) => {
       if (err) {
-        logError(err);
+        logError('drive stream file error', err);
         return res.send({ success: false });
       }
       res.set({
