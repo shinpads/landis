@@ -34,7 +34,7 @@ apiRouter.get('/user/all', permissions('EDIT_USERS'), getUsers);
 
 // game routes
 apiRouter.get('/game/all', getGames);
-apiRouter.get('/game/download/:id', downloadGame);
+apiRouter.get('/game/download/:id', assertLoggedIn, downloadGame);
 
 async function login(req, res) {
   log('POST /api/login');
@@ -88,10 +88,8 @@ async function register(req, res) {
 async function logout(req, res) {
   log('POST /api/logout');
   try {
-    const sesh = await db.Session.model.findOne({ sid: req.sid });
+    const sesh = await db.Session.model.findOneAndUpdate({ sid: req.sid }, { loggedIn: false }, { upsert: false, new: true });
     if (!sesh) return res.send({ success: false });
-    sesh.loggedIn = false;
-    await sesh.save();
     res.send({ success: true });
   } catch (err) {
     logError(err);
@@ -174,5 +172,17 @@ function permissions(perm) {
       res.send({ sucess: false });
     }
   };
+}
+
+async function assertLoggedIn(req, res, next) {
+  try {
+    if (!req.loggedIn) {
+      res.send({ success: false });
+    } else {
+      next();
+    }
+  } catch (err) {
+    res.send({ success: false });
+  }
 }
 module.exports = apiRouter;

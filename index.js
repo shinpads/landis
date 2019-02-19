@@ -1,4 +1,4 @@
-require('dotenv').config({ path: './.env.' + process.env.NODE_ENV });
+require('dotenv').config({ path: './.env.production' });
 const debug = require('debug');
 const mongoose = require('mongoose');
 const db = require('./server/models');
@@ -11,6 +11,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const apiRouter = require('./server/apiRouter');
 
+log(process.env.MONGO_HOST, process.env.MONGO_PORT);
 mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
  {
    auth: { audthdb: 'admin' },
@@ -39,9 +40,9 @@ app.use('/', async (req, res, next) => {
     });
     await newSesh.save();
   } else {
-    req.user = sesh._doc.userId;
     req.loggedIn = sesh._doc.loggedIn;
     if (sesh._doc.loggedIn && sesh._doc.userId) {
+      req.user = sesh._doc.userId;
       const user = await db.User.model.findOneAndUpdate({ _id: sesh._doc.userId },
       {
         lastOnline: Date.now(),

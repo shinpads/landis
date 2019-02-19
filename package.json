@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "NODE_ENV=production DEBUG=mjlbe:* node index.js",
+    "start-windows": "SET NODE_ENV=production && SET DEBUG=mjlbe:* && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

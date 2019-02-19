@@ -37,6 +37,7 @@ function getAccessToken(oAuth2Client, callback) {
     access_type: 'offline',
     scope: SCOPES,
   });
+  console.log('go here to authenticate:', authUrl);
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
