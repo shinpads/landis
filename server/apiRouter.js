@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
 const googledrive = require('./googledrive');
 const db = require('./models');
+const permissionsList = require('./permissions');
+
 mongoose.connect(`mongodb://${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/db?authSource=admin`,
  {
    auth: { audthdb: 'admin' },
@@ -35,6 +37,9 @@ apiRouter.get('/user/all', permissions('EDIT_USERS'), getUsers);
 // game routes
 apiRouter.get('/game/all', getGames);
 apiRouter.get('/game/download/:id', assertLoggedIn, downloadGame);
+
+// other
+apiRouter.get('/permissions-list', getPermissionsList);
 
 async function login(req, res) {
   log('POST /api/login');
@@ -155,6 +160,16 @@ async function getUser(req, res) {
   } catch(err) {
     logError(err);
     res.send({ success: false });
+  }
+}
+
+async function getPermissionsList(req, res) {
+  log('/api/permissions-list');
+  try {
+    res.send({ success: true, permissionsList: permissionsList });
+  } catch (err) {
+    logError(err);
+    res.send({ sucess: false });
   }
 }
 
