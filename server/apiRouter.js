@@ -38,6 +38,11 @@ apiRouter.get('/user/all', permissions('EDIT_USERS'), getUsers);
 apiRouter.get('/game/all', getGames);
 apiRouter.get('/game/download/:id', downloadGame);
 
+// review routes
+apiRouter.get('/review/:gameId/:userId', getReviewGameUser);
+apiRouter.get('/review/:gameId', getReviewsGame);
+apiRouter.post('/review/:gameId/:userId', postReviewUserGame);
+
 // other
 apiRouter.get('/permissions-list', getPermissionsList);
 
@@ -172,6 +177,66 @@ async function getPermissionsList(req, res) {
   } catch (err) {
     logError(err);
     res.send({ sucess: false });
+  }
+}
+
+async function getReviewGameUser(req, res) {
+  const { gameId, userId } = req.params;
+  log(`GET review/${gameId}/${userId}`);
+  try {
+    const review = await db.Review.model.findOne({
+      gameId,
+      userId,
+    });
+    res.send({ success: true, review });
+  } catch (err) {
+    logError(err);
+    res.send({ success: false });
+  }
+}
+
+async function getReviewsGame(req, res) {
+  const { gameId } = req.params;
+  log(`GET review/${gameId}`);
+  try {
+    const reviews = await db.Review.model.find({
+      gameId,
+    });
+    res.send({ success: true, reviews });
+  } catch (err) {
+    logError(err);
+    res.send({ success: false });
+  }
+}
+
+async function postReviewUserGame(req, res) {
+  const { gameId, userId } = req.params;
+  log(`POST review/${gameId}/${userId}`);
+  try {
+    const { title, description } = req.body;
+    if (!title || !description) return res.send({ success: false });
+    if (String(req.user) !== String(userId)) return res.send({ success: false });
+    const user = await db.User.model.findOne({ _id: userId });
+    if (!user) return res.send({ success: false });
+    const query = { gameId, userId };
+    const update = {
+      lastUpdated: Date.now(),
+      title,
+      description,
+      gameId,
+      userId,
+      username: user._doc.username,
+    }
+    const options = {
+      upsert: true,
+      new: true,
+    };
+    const review = await db.Review.model.findOneAndUpdate(query, update, options);
+    if (review) return res.send({ success: true });
+    res.send({ success: false });
+  } catch (err) {
+    logError(err);
+    res.send({ success: false });
   }
 }
 
