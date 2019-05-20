@@ -10,7 +10,11 @@ const schema = {
   username: String,
   password: String,
   createdDate: Date,
-  permissions: Object,
+  permissions: {
+    EDIT_USERS: Boolean,
+    EDIT_UPDATES: Boolean,
+    EDIT_GAMES: Boolean,
+  },
   lastOnline: Date,
 };
 
